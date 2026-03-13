@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedagogy Stock Market | Official Platform</title>
+    
+    <!-- Firebase SDKs (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+
+    <style>
+        /* --- THEME: Ultra Colorful Childhood Delight --- */
+        :root {
+            --yellow: #FFD93D;
+            --blue: #6ECBFF;
+            --green: #7AE7C7;
+            --pink: #FFB5A7;
+            --lavender: #CDB4DB;
+            --white: #FBFDFF;
+            --text-dark: #2D3436;
+            --text-light: #636E72;
+            --danger: #FF7675;
+            --card-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-main);
+            color: var(--text-dark);
+            background: linear-gradient(300deg, #ff9a9e, #fad0c4, #fad0c4, #a18cd1, #fbc2eb, #8fd3f4);
+            background-size: 400% 400%;
+            animation: gradientBG 12s ease infinite;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        .bounce-in { animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bounceIn { 0% { opacity: 0; transform: scale(0.3); } 50% { opacity: 1; transform: scale(1.05); } 70% { transform: scale(0.9); } 100% { transform: scale(1); } }
+
+        /* --- ANIMATED COINS --- */
+        .coin-bg {
+            position: fixed; width: 30px; height: 30px; z-index: 0; opacity: 0.2; pointer-events: none;
+            border-radius: 50%; background: var(--yellow); border: 2px solid #fff;
+            box-shadow: 0 0 10px var(--yellow);
+            animation: floatCoin 10s linear infinite;
+        }
+        @keyframes floatCoin {
+            0% { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+        }
+
+        button { cursor: pointer; border: none; outline: none; font-family: inherit; transition: transform 0.2s, box-shadow 0.2s; }
+        button:active { transform: scale(0.95); }
+        button:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none;}
+
+        /* --- LOGIN / WELCOME OVERLAY --- */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.3); backdrop-filter: blur(15px);
+            z-index: 1000; display: flex; justify-content: center; align-items: center;
+        }
+        .login-card {
+            background: var(--white); padding: 3rem; border-radius: 40px;
+            width: 90%; max-width: 850px; box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+            text-align: center; position: relative; border: 5px solid var(--yellow);
+            max-height: 90vh; overflow-y: auto;
+        }
+        .speech-box {
+            background: #fff8e1; padding: 25px; border-radius: 20px;
+            margin-bottom: 2rem; border: 3px dashed var(--pink);
+            text-align: left; font-style: italic; line-height: 1.8; color: #555; font-size: 1.1rem;
+        }
+        .speech-author { text-align: right; font-weight: bold; margin-top: 15px; color: var(--blue); font-style: normal; font-size: 1.2rem; }
+        select { width: 100%; padding: 18px; border-radius: 20px; border: 2px solid var(--pink); font-size: 1.1rem; margin-bottom: 1.5rem; background: #fff0f5; font-weight: bold; }
+        .btn-primary { background: var(--green); color: #00695c; padding: 18px 50px; border-radius: 50px; font-size: 1.3rem; font-weight: bold; box-shadow: 0 8px 0 #4db6ac; width: 100%; }
+
+        /* --- MAIN LAYOUT --- */
+        #app-container { max-width: 1200px; margin: 0 auto; padding: 20px; padding-top: 90px; position: relative; z-index: 10; }
+        header {
+            position: fixed; top: 0; left: 0; right: 0; height: 70px; background: var(--white);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 30px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08); z-index: 500;
+        }
+        .logo { font-weight: bold; color: var(--blue); display: flex; align-items: center; gap: 10px; font-size: 1.2rem; }
+        .status-pill { padding: 8px 20px; border-radius: 30px; color: white; font-weight: bold; font-size: 1rem; }
+        .status-open { background: var(--green); box-shadow: 0 0 10px var(--green); }
+        .status-closed { background: var(--danger); }
+
+        /* --- DASHBOARD GRID --- */
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px; }
+        .full-width { grid-column: span 2; }
+        @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } }
+
+        .card { background: var(--white); border-radius: 30px; padding: 25px; box-shadow: var(--card-shadow); position: relative; overflow: hidden; border: 2px solid transparent; transition: border-color 0.3s;}
+        .card:hover { border-color: var(--lavender); }
+        .card-header { font-size: 1.2rem; color: var(--text-light); margin-bottom: 15px; font-weight: bold; border-bottom: 2px solid #eee; padding-bottom: 10px; display: flex; justify-content: space-between; }
+        .big-number { font-size: 2.8rem; font-weight: 900; color: var(--blue); }
+        
+        /* --- INDEX STYLES --- */
+        .index-summary { display: flex; gap: 20px; margin-bottom: 15px; padding: 10px; background: #e0f2f1; border-radius: 15px; color: #00695c; font-size: 0.9rem; font-weight: bold; }
+        .index-label { background: white; padding: 5px 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        /* --- NOTIFICATION ITEMS --- */
+        .notif-item { padding: 15px; border-radius: 15px; margin-bottom: 10px; font-size: 0.95rem; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; animation: fadeIn 0.4s; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        
+        .notif-type-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; margin-bottom: 5px; width: fit-content; padding: 2px 8px; border-radius: 4px; }
+        
+        .notif-assembly { background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #5d4037; border: 2px solid #fff; font-weight: bold; }
+        .notif-cert { background: #fff9c4; border-left: 5px solid var(--yellow); }
+        .notif-cert .notif-type-label { background: var(--yellow); color: #5d4037; }
+        
+        .notif-msg { background: #e3f2fd; border-left: 5px solid var(--blue); }
+        .notif-msg .notif-type-label { background: var(--blue); color: white; }
+        
+        /* --- SENIOR MONITOR BOARD --- */
+        .monitor-table { width: 100%; border-collapse: collapse; }
+        .monitor-table th { text-align: left; padding: 10px; color: var(--text-light); font-size: 0.85rem; border-bottom: 2px solid #eee; }
+        .monitor-table td { padding: 12px 10px; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+        .activity-tag { background: #e0f2f1; padding: 4px 8px; border-radius: 8px; color: #00695c; font-size: 0.75rem; font-weight: bold; }
+
+        /* --- MARKETPLACE --- */
+        .stock-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; }
+        .stock-card { background: var(--white); border-radius: 25px; overflow: hidden; box-shadow: var(--card-shadow); display: flex; flex-direction: column; transition: transform 0.3s; border: 1px solid #eee;}
+        .stock-card:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(0,0,0,0.2); }
+        .stock-header { background: var(--blue); padding: 20px; color: white; position: relative; }
+        .stock-price-tag { position: absolute; right: 20px; top: 20px; background: white; color: var(--blue); padding: 5px 15px; border-radius: 15px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .stock-body { padding: 20px; flex-grow: 1; }
+        .stock-actions { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; padding: 20px; border-top: 1px solid #eee; align-items: center; }
+        .btn-buy { background: var(--green); color: #00695c; padding: 12px; border-radius: 20px; font-weight: bold; width: 100%; }
+        .btn-like { background: var(--pink); color: white; padding: 12px; border-radius: 50%; font-size: 1.4rem; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; box-shadow: 0 4px 0 #e57373;}
+        .btn-like:hover { transform: scale(1.1); }
+        .btn-like:active { transform: scale(0.9); box-shadow: 0 0 0 #e57373; transform: translateY(4px);}
+
+        /* --- CONTROLS --- */
+        .form-input { width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #eee; border-radius: 15px; font-family: inherit; }
+        .form-input:focus { border-color: var(--blue); }
+        .btn-danger { background: var(--danger); color: white; width: 100%; padding: 12px; border-radius: 15px; font-weight: bold; }
+        .btn-purple { background: var(--lavender); color: #4a148c; width: 100%; padding: 12px; border-radius: 15px; font-weight: bold; }
+
+        /* --- SPARK & TOAST --- */
+        #spark-mascot { position: fixed; bottom: 30px; right: 30px; width: 90px; height: 90px; background: white; border-radius: 50%; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; justify-content: center; align-items: center; font-size: 50px; cursor: pointer; z-index: 800; border: 5px solid var(--yellow); animation: bounce 2s infinite ease-in-out; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        #toast-container { position: fixed; top: 100px; right: 20px; z-index: 2000; }
+        .toast { background: var(--white); border-left: 6px solid var(--green); padding: 20px 25px; margin-bottom: 15px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); animation: slideIn 0.3s; display: flex; align-items: center; gap: 15px; font-weight: 500; }
+        .toast.error { border-left-color: var(--danger); }
+        @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* --- MODALS --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 900; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(5px); }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal-content { background: var(--white); width: 95%; max-width: 600px; border-radius: 30px; padding: 40px; position: relative; max-height: 90vh; overflow-y: auto; text-align: center; border: 4px solid var(--lavender); }
+        .close-btn { position: absolute; top: 20px; right: 20px; font-size: 2rem; background: none; border: none; cursor: pointer; color: #aaa; }
+        
+        /* Certificate Preview Styles */
+        .cert-preview { border: 10px double var(--lavender); padding: 40px; background: #fff; background-image: radial-gradient(#f0f0f0 1px, transparent 1px); background-size: 20px 20px; box-shadow: inset 0 0 20px rgba(0,0,0,0.05); margin-top: 20px;}
+        .sent-badge { background: #e8f5e9; color: #2e7d32; padding: 10px; border-radius: 20px; display: inline-block; margin-bottom: 15px; font-weight: bold; border: 1px solid #c8e6c9;}
+        
+        /* Leaderboard List Style */
+        .lb-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed #eee; font-size: 1rem; align-items: center;}
+        .lb-rank { font-weight: 900; color: var(--yellow); text-shadow: 1px 1px 0 #999; width: 35px; font-size: 1.2rem;}
+        .lb-arrow { font-size: 1.2rem; margin-left: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- --- BACKGROUND ANIMATED COINS --- -->
+    <div id="coins-container"></div>
+
+    <!-- --- LOGIN / WELCOME --- -->
+    <div id="login-overlay">
+        <div class="login-card bounce-in">
+            <h1 class="login-title" style="font-size: 2.5rem; color: var(--blue); margin-bottom: 20px;">🌸 Pedagogy Stock Market</h1>
+            
+            <div class="speech-box">
+                <p>
+                    <strong>I am Halima Al-Risi, English Senior at Al-Ebtkar School, and I proudly welcome my shining and diamond-level teachers to the Pedagogy Stock Market.</strong>
+                </p>
+                <br>
+                <p>
+                    This is the start of a new journey. Your classrooms are full of brilliance, and your strategies are powerful assets. When you share your ideas, document your impact, and invest in innovation, you raise the value of our entire learning community.
+                </p>
+                <br>
+                <p>
+                    The market opens every Sunday at 8:00 AM and closes every Thursday at 8:00 PM. Let's trade excellence together!
+                </p>
+                <div class="speech-author">- Ms. Halima Al-Risi</div>
+            </div>
+
+            <select id="teacher-select">
+                <option value="" disabled selected>-- Select Your Identity --</option>
+                <option value="Fatma Mohammed Ali Albloushi">Fatma Mohammed Ali Albloushi</option>
+                <option value="Hajer Khalfan Al-Shidi">Hajer Khalfan Al-Shidi</option>
+                <option value="Badria Hamdan Rashed Al-Shidi">Badria Hamdan Rashed Al-Shidi</option>
+                <option value="Fatma Mohammed Al-Sheedi">Fatma Mohammed Al-Sheedi</option>
+                <option value="Raja Ahmad Al-Snani">Raja Ahmad Al-Snani</option>
+                <option value="Mariam Abdullah Matar Al-Qurani">Mariam Abdullah Matar Al-Qurani</option>
+                <option value="Thuraiya Said Ali Al-Ghaith">Thuraiya Said Ali Al-Ghaith</option>
+                <option value="Amna Mohammed Ali Al-Omrani">Amna Mohammed Ali Al-Omrani</option>
+                <option value="Ameera Said Al-Hashmi">Ameera Said Al-Hashmi</option>
+                <!-- SENIOR LOGIN OPTION -->
+                <option value="SENIOR" style="font-weight:bold; color: var(--blue);">Ms. Halima Al-Risi (Senior)</option>
+            </select>
+            <button class="btn-primary" onclick="handleLogin()">Enter The Market</button>
+        </div>
+    </div>
+
+    <!-- --- HEADER --- -->
+    <header id="main-header" class="hidden">
+        <div class="logo">🌸 Pedagogy Market</div>
+        <div class="user-status">
+            <span id="market-status-badge" class="status-pill status-open">Market Open</span>
+            <span id="clock-display" style="font-weight:bold; margin: 0 10px;">08:00 AM</span>
+            <span id="user-name-display" style="font-weight: bold;">User</span>
+            <button onclick="logout()" style="color: var(--danger); background:none; margin-left:10px; font-size: 0.9rem;">Exit</button>
+        </div>
+    </header>
+
+    <!-- --- APP CONTAINER --- -->
+    <div id="app-container" class="hidden">
+        
+        <!-- TEACHER VIEW -->
+        <div id="teacher-view" class="fade-in">
+            <div class="dashboard-grid">
+                <!-- WALLET -->
+                <div class="card">
+                    <div class="card-header">My Wallet 💰</div>
+                    <div class="big-number" id="dash-points">0</div>
+                    <div style="font-size: 1.1rem;">Points | Cash: <strong id="dash-cash">10.0</strong> OMR</div>
+                    <div style="margin-top:10px; font-size:0.9rem; color:#777;">🏆 Reward: 500 Pts = 10 OMR</div>
+                </div>
+
+                <!-- LEADERBOARD -->
+                <div class="card" style="max-height: 300px; overflow-y: auto;">
+                    <div class="card-header">🏆 Live Leaderboard</div>
+                    <div id="leaderboard-list"></div>
+                </div>
+                
+                <!-- INDEX -->
+                <div class="card full-width" style="background: #f8f9fa; border-top: 5px solid var(--lavender);">
+                    <div class="card-header">📝 Index: Comments & Certificates</div>
+                    <div class="index-summary">
+                        <span class="index-label">Certificates</span>
+                        <span class="index-label">Comments</span>
+                    </div>
+                    <div id="teacher-inbox" style="max-height: 300px; overflow-y: auto;">
+                        <div style="color: #aaa; text-align: center; padding: 20px;">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="market-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h2 style="color: var(--text-dark);">📈 Live Marketplace</h2>
+                    <button class="btn-primary" style="width: auto; padding: 12px 40px; font-size: 1.1rem;" onclick="openUploadModal()">+ Upload New Investment</button>
+                </div>
+                <div class="stock-list" id="stock-feed">
+                    <div style="grid-column: span 3; text-align: center; color: #777; padding: 40px;">
+                        Loading market data...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SENIOR VIEW -->
+        <div id="senior-view" class="hidden fade-in">
+            <h1 style="color: var(--blue); margin-bottom: 25px; text-shadow: 2px 2px 0px #fff;">Senior Dashboard: Command Center</h1>
+            
+            <div class="dashboard-grid">
+                <!-- MARKET CONTROL -->
+                <div class="card full-width" style="background: #e0f7fa; border: 2px solid var(--blue);">
+                    <div class="card-header">
+                        <span>⏰ Market Schedule: Sunday 8:00 AM - Thursday 8:00 PM</span>
+                        <span id="senior-market-timer" style="font-family: monospace; font-size: 1.1rem; color: var(--blue);">Checking...</span>
+                    </div>
+                    <div style="display: flex; gap: 20px; align-items: center;">
+                        <div style="flex:1;">
+                            <strong>Status:</strong> <span id="market-text-status">Open</span>
+                        </div>
+                        <button class="btn-purple" style="width: auto; padding: 10px 30px;" onclick="forceMarketAnnouncement()">📢 Send Market Status</button>
+                    </div>
+                </div>
+
+                <!-- TEACHER MONITOR -->
+                <div class="card full-width">
+                    <div class="card-header">🖥️ Live Teacher Activity Board</div>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        <table class="monitor-table">
+                            <thead>
+                                <tr>
+                                    <th>Teacher</th>
+                                    <th>Points</th>
+                                    <th>Current Action</th>
+                                    <th>Session Login Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="senior-live-feed"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- COMMUNICATION CENTER -->
+                <div class="card full-width">
+                    <div class="card-header" style="color: var(--purple);">📤 Communication Center (Send Messages & Certificates)</div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <!-- Certificate Buttons -->
+                        <div>
+                            <h4 style="margin-bottom: 10px; color: var(--text-light);">Send Certificate</h4>
+                            <div style="display: grid; gap: 10px;">
+                                <button class="btn-purple" onclick="setCertType('Encouragement')">💪 Encouragement</button>
+                                <button class="btn-purple" style="background: var(--pink);" onclick="setCertType('Thankful')">❤️ Thankful</button>
+                                <button class="btn-purple" style="background: var(--yellow); color: #5d4037;" onclick="setCertType('Excellence')">🌟 Excellence</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Comment Form -->
+                        <div>
+                            <h4 style="margin-bottom: 10px; color: var(--text-light);">Send General Comment</h4>
+                            <select id="msg-user-select" class="form-input"><option value="">Select Teacher...</option></select>
+                            <input type="text" id="msg-content" class="form-input" placeholder="Type your comment here...">
+                            <button class="btn-primary" style="background: var(--blue); box-shadow:none;" onclick="sendGeneralComment()">Send Comment</button>
+                        </div>
+                    </div>
+
+                    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+
+                    <h4 style="margin-bottom: 15px;">Generate Certificate PDF</h4>
+                    <select id="cert-user-select" class="form-input"><option value="">Select Teacher...</option></select>
+                    <input type="text" id="cert-comment" class="form-input" placeholder="Personal message / phrase...">
+                    <button class="btn-primary" style="background: var(--lavender); color: #4a148c; box-shadow: none;" onclick="openCertificateModal()">Generate & Send Certificate</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- --- SPARK & TOASTS --- -->
+    <div id="spark-mascot" class="hidden">⭐</div>
+    <div id="toast-container"></div>
+
+    <!-- --- CERTIFICATE MODAL --- -->
+    <div id="cert-modal" class="modal-overlay">
+        <div class="modal-content bounce-in">
+            <button class="close-btn" onclick="closeCertModal()">&times;</button>
+            <h2 id="cert-type-display" style="color: var(--lavender); margin-bottom: 20px;">Certificate</h2>
+            <div class="sent-badge">✅ Notification sent automatically to Teacher's Index</div>
+            <div class="cert-preview" id="printable-cert">
+                <div style="border: 5px solid var(--yellow); padding: 20px; height: 100%;">
+                    <h1 style="font-family: serif; color: var(--blue); margin-bottom: 10px;">Certificate of <span id="cert-type-text">Excellence</span></h1>
+                    <p>This is to certify that</p>
+                    <h2 id="cert-teacher-name" style="font-size: 1.8rem; color: var(--text-dark); margin: 10px 0; font-family: cursive;">TEACHER NAME</h2>
+                    <p>Has demonstrated outstanding commitment and achievement.</p>
+                    <p style="font-style: italic; margin: 20px 0; color: #555;">"<span id="cert-msg-text">Message here...</span>"</p>
+                    <div style="margin-top: 40px; display: flex; justify-content: space-between;">
+                        <div>
+                            <strong>Ms. Halima Al-Risi</strong><br>
+                            <small>English Senior</small>
+                        </div>
+                        <div style="font-family: monospace; color: #aaa; font-size: 0.8rem;">PEDAGOGY MARKET SYSTEM</div>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 30px;">
+                <button class="btn-primary" onclick="printCertificate()">🖨️ Print / Save as PDF</button>
+                <button class="btn-danger" style="width: auto; margin-left: 10px;" onclick="closeCertModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- --- UPLOAD MODAL --- -->
+    <div id="upload-modal" class="modal-overlay">
+        <div class="modal-content bounce-in">
+            <button class="close-btn" onclick="closeUploadModal()">&times;</button>
+            <h2 style="color: var(--blue);">List New Educational Stock</h2>
+            <div class="form-group">
+                <label style="display:block; margin: 15px 0; font-weight:bold;">Category</label>
+                <select id="upload-category" class="form-input">
+                    <option value="Active Learning">Active Learning Strategies</option>
+                    <option value="AI Integration">AI Integration Strategies</option>
+                    <option value="Learning Gap Recovery">Learning Gap Recovery Strategies</option>
+                    <option value="Assessment">Assessment for Learning Strategies</option>
+                    <option value="21st Century Skills">21st Century Skills Strategies</option>
+                    <option value="Daily Life Skills">Daily Life Skills Application</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label style="display:block; margin: 15px 0; font-weight:bold;">Documentation (Video/Image)</label>
+                <div style="border: 2px dashed var(--blue); padding: 30px; text-align:center; border-radius:15px; cursor:pointer; background: #f0f9ff;" onclick="document.getElementById('file-input').click()">
+                    Click to Upload File
+                    <input type="file" id="file-input" hidden onchange="this.nextElementSibling.innerText = '✅ ' + this.files[0].name">
+                    <div style="margin-top:10px; font-size:0.9rem; color:var(--green); font-weight: bold;"></div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label style="display:block; margin: 15px 0; font-weight:bold;">Impact Report</label>
+                <textarea id="upload-impact" class="form-input" rows="4" placeholder="Student outcomes..."></textarea>
+            </div>
+            <button class="btn-primary" onclick="submitInvestment()">Submit Investment</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // FIREBASE CONFIGURATION (YOUR NEW KEYS)
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCQGqbZA5Tx8PaBX9W5cjcUT9Ys3q2XLEA",
+            authDomain: "edustock-972f9.firebaseapp.com",
+            // This URL is constructed based on your project ID
+            databaseURL: "https://edustock-972f9-default-rtdb.firebaseio.com", 
+            projectId: "edustock-972f9",
+            storageBucket: "edustock-972f9.firebasestorage.app",
+            messagingSenderId: "74569272175",
+            appId: "1:74569272175:web:d7121a2302d51ec7f6369a",
+            measurementId: "G-HCBJFHBL6E"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const storage = firebase.storage();
+
+        // ==========================================
+        // APP LOGIC
+        // ==========================================
+        const TEACHERS = [
+            "Fatma Mohammed Ali Albloushi", "Hajer Khalfan Al-Shidi", "Badria Hamdan Rashed Al-Shidi",
+            "Fatma Mohammed Al-Sheedi", "Raja Ahmad Al-Snani", "Mariam Abdullah Matar Al-Qurani",
+            "Thuraiya Said Ali Al-Ghaith", "Amna Mohammed Ali Al-Omrani", "Ameera Said Al-Hashmi"
+        ];
+
+        // Local data cache
+        let db = { users: {}, stocks: [], activityLog: [] };
+        let currentUser = null;
+        let isSenior = false;
+        let selectedCertType = "Excellence";
+
+        /* --- KEY CONVERSION HELPERS --- */
+        const encodeKey = (name) => name.replace(/\./g, '_');
+        const decodeKey = (key) => key.replace(/_/g, '.');
+
+        /* --- CORE SYNC LOGIC --- */
+        function logAction(actor, action, details) {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            
+            database.ref('activityLog').push({
+                time: timeStr,
+                actor: actor,
+                action: action,
+                details: details,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+            
+            if (db.users[actor]) {
+                database.ref('users/' + encodeKey(actor)).update({
+                    lastAction: action,
+                    lastActionTime: timeStr
+                });
+            }
+        }
+
+        function notifyUser(userName, type, msg) {
+            database.ref('users/' + encodeKey(userName) + '/inbox').push({
+                type: type,
+                msg: msg,
+                date: firebase.database.ServerValue.TIMESTAMP,
+                read: false
+            });
+        }
+
+        function sendGlobalNotification(type, msg) {
+            TEACHERS.forEach(name => notifyUser(name, type, msg));
+        }
+
+        /* --- INITIALIZATION --- */
+        function init() {
+            // 1. Initialize Teacher Data in Firebase if not exists
+            TEACHERS.forEach(name => {
+                const userRef = database.ref('users/' + encodeKey(name));
+                userRef.once('value', snapshot => {
+                    if (!snapshot.exists()) {
+                        userRef.set({
+                            name: name, points: 0, cash: 10.0, 
+                            portfolio: [], riskHistory: [], lastMilestone: 0,
+                            lastAction: "Idle", lastActionTime: "--:--", loginTime: "Offline"
+                        });
+                    }
+                });
+            });
+
+            // 2. Setup Real-time Listeners
+            setupFirebaseListeners();
+
+            // 3. UI Animations
+            const coinContainer = document.getElementById('coins-container');
+            for(let i=0; i<10; i++) {
+                let c = document.createElement('div');
+                c.className = 'coin-bg';
+                c.style.left = Math.random() * 100 + '%';
+                c.style.animationDelay = Math.random() * 5 + 's';
+                coinContainer.appendChild(c);
+            }
+
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        function setupFirebaseListeners() {
+            // Listen for Users Data
+            database.ref('users').on('value', snapshot => {
+                const users = snapshot.val();
+                if (users) {
+                    db.users = {};
+                    Object.keys(users).forEach(key => {
+                        db.users[decodeKey(key)] = users[key];
+                    });
+                    
+                    if (currentUser && !isSenior) renderTeacherDashboard();
+                    else if (isSenior) renderSeniorLiveBoard();
+                    
+                    syncLeaderboard();
+                }
+            });
+
+            // Listen for Stocks Data
+            database.ref('stocks').on('value', snapshot => {
+                const stocks = snapshot.val();
+                if (stocks) {
+                    db.stocks = Object.values(stocks);
+                } else {
+                    db.stocks = [];
+                }
+                if (currentUser && !isSenior) renderStockFeed();
+            });
+        }
+
+        /* --- MARKET SCHEDULE LOGIC --- */
+        function isMarketOpen() {
+            const now = new Date();
+            const day = now.getDay();
+            const hour = now.getHours();
+            if (day === 5 || day === 6) return false;
+            if (day >= 0 && day <= 4) {
+                if (hour >= 8 && hour < 20) return true;
+            }
+            return false;
+        }
+
+        let lastMarketState = null;
+        function updateClock() {
+            const now = new Date();
+            const open = isMarketOpen();
+            const badge = document.getElementById('market-status-badge');
+            const clock = document.getElementById('clock-display');
+            const textStatus = document.getElementById('market-text-status');
+            
+            if(clock) clock.innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            
+            if(badge) {
+                badge.className = open ? "status-pill status-open" : "status-pill status-closed";
+                badge.innerText = open ? "Market Open" : "Market Closed";
+            }
+            if(textStatus) textStatus.innerText = open ? "OPEN (Sunday - Thursday)" : "CLOSED (Opens Sunday 8am)";
+
+            if (lastMarketState !== open && db.users && Object.keys(db.users).length > 0) {
+                lastMarketState = open;
+                if (open) {
+                    sendGlobalNotification('assembly', '🔔 MARKET OPENED! The trading floor is now open.');
+                    playSound('bell');
+                } else {
+                    sendGlobalNotification('assembly', '🔔 MARKET CLOSED. Trading suspended until Sunday.');
+                    playSound('bell');
+                }
+            }
+        }
+
+        function forceMarketAnnouncement() {
+            const open = isMarketOpen();
+            const msg = open ? "⚠️ Market is OPEN. Upload strategies now!" : "⚠️ Market is CLOSED. Opens Sunday 8 AM.";
+            sendGlobalNotification('msg', msg);
+            showToast("Announcement sent!", "success");
+        }
+
+        /* --- AUTHENTICATION --- */
+        function handleLogin() {
+            const val = document.getElementById('teacher-select').value;
+            if(!val) return showToast("Please select your name.", "error");
+
+            document.getElementById('login-overlay').classList.add('hidden');
+            document.getElementById('main-header').classList.remove('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('spark-mascot').classList.remove('hidden');
+
+            const now = new Date();
+            const loginTime = now.toLocaleTimeString();
+
+            if(val === "SENIOR") {
+                isSenior = true;
+                currentUser = { name: "Senior" };
+                document.getElementById('teacher-view').classList.add('hidden'); 
+                document.getElementById('senior-view').classList.remove('hidden'); 
+                populateDropdowns();
+                renderSeniorLiveBoard();
+            } else {
+                isSenior = false;
+                currentUser = db.users[val] || { name: val };
+                
+                database.ref('users/' + encodeKey(val)).update({
+                    loginTime: loginTime,
+                    lastAction: "Logged In"
+                });
+                
+                document.getElementById('senior-view').classList.add('hidden'); 
+                document.getElementById('teacher-view').classList.remove('hidden'); 
+                document.getElementById('user-name-display').innerText = val;
+                renderTeacherDashboard();
+            }
+            playSound('bell');
+        }
+
+        function logout() { 
+            if(currentUser && !isSenior) {
+                database.ref('users/' + encodeKey(currentUser.name)).update({ lastAction: "Logged Out" });
+            }
+            location.reload(); 
+        }
+
+        /* --- TEACHER DASHBOARD --- */
+        function renderTeacherDashboard() {
+            if(!currentUser || !currentUser.name) return;
+            const freshData = db.users[currentUser.name];
+            if(freshData) currentUser = freshData;
+            
+            document.getElementById('dash-points').innerText = currentUser.points || 0;
+            document.getElementById('dash-cash').innerText = (currentUser.cash || 10.0).toFixed(1);
+            renderInbox();
+            renderStockFeed();
+        }
+
+        function renderInbox() {
+            const container = document.getElementById('teacher-inbox');
+            container.innerHTML = "";
+            
+            if(!currentUser.inbox || Object.keys(currentUser.inbox).length === 0) {
+                container.innerHTML = '<div style="color: #aaa; text-align: center; padding: 20px;">Your index is empty.</div>';
+                return;
+            }
+
+            const sorted = Object.values(currentUser.inbox).sort((a, b) => (b.date || 0) - (a.date || 0));
+
+            sorted.forEach(n => {
+                let labelText = "Announcement";
+                let styleClass = "notif-assembly";
+                
+                if(n.type === 'cert') { labelText = "Certificate"; styleClass = "notif-cert"; }
+                else if (n.type === 'msg') { labelText = "Comment"; styleClass = "notif-msg"; }
+
+                const div = document.createElement('div');
+                div.className = `notif-item ${styleClass}`;
+                div.innerHTML = `<div class="notif-type-label">${labelText}</div><div>${n.msg}</div>`;
+                container.appendChild(div);
+            });
+        }
+
+        function syncLeaderboard() {
+            const sorted = Object.values(db.users).sort((a,b) => (b.points||0) - (a.points||0));
+            const lbList = document.getElementById('leaderboard-list');
+            if(!lbList) return;
+            
+            lbList.innerHTML = "";
+            sorted.slice(0, 5).forEach((u, i) => {
+                const li = document.createElement('div');
+                li.className = 'lb-item';
+                const arrow = i === 0 ? '🚀' : '📈';
+                li.innerHTML = `
+                    <div><span class="lb-rank">#${i+1}</span> ${u.name.split(' ')[0]}</div>
+                    <div style="display:flex; align-items:center;">${u.points || 0} pts <span class="lb-arrow">${arrow}</span></div>
+                `;
+                lbList.appendChild(li);
+            });
+        }
+
+        function renderStockFeed() {
+            const container = document.getElementById('stock-feed');
+            container.innerHTML = "";
+            
+            if(db.stocks.length === 0) {
+                 container.innerHTML = '<div style="grid-column: span 3; text-align: center; color: #777; padding: 40px;">No strategies uploaded yet.</div>';
+                 return;
+            }
+
+            const sortedStocks = [...db.stocks].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            sortedStocks.forEach(stock => {
+                const isOwner = stock.author === currentUser.name;
+                const hasLiked = stock.likedBy && stock.likedBy.includes(currentUser.name);
+
+                const div = document.createElement('div');
+                div.className = "stock-card fade-in";
+                div.innerHTML = `
+                    <div class="stock-header" style="background:${getCatColor(stock.category)}">
+                        <h3>${stock.title}</h3>
+                        <div class="stock-price-tag">${(stock.price || 1).toFixed(2)} OMR</div>
+                    </div>
+                    <div class="stock-body">
+                        <small>${stock.category} by ${stock.author.split(' ')[0]}</small>
+                        <p style="font-size:0.85rem; color:#666; margin-top:8px;">${stock.impact || ''}</p>
+                    </div>
+                    <div class="stock-actions">
+                        ${!isOwner ? `
+                            <button class="btn-buy" onclick="buyStock('${stock.id}')">Buy</button>
+                            <button class="btn-like" onclick="likeStock('${stock.id}')">${hasLiked ? '❤️' : '🤍'}</button>
+                        ` : '<div style="font-size:0.9rem; color:#777;">Your Stock</div>'}
+                        <span style="font-size:0.9rem; color:#777;">${stock.likedBy ? stock.likedBy.length : 0} Likes</span>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        /* --- SENIOR DASHBOARD --- */
+        function populateDropdowns() {
+            const selects = [document.getElementById('cert-user-select'), document.getElementById('msg-user-select')];
+            selects.forEach(sel => {
+                sel.innerHTML = '<option value="">Select Teacher...</option>';
+                TEACHERS.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t; opt.innerText = t;
+                    sel.appendChild(opt);
+                });
+            });
+        }
+
+        function renderSeniorLiveBoard() {
+            const tbody = document.getElementById('senior-live-feed');
+            if(!tbody) return;
+            tbody.innerHTML = "";
+            
+            TEACHERS.forEach(name => {
+                const u = db.users[name];
+                if(!u) return;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${name.split(' ')[0]}</td>
+                    <td><strong>${u.points || 0}</strong></td>
+                    <td><span class="activity-tag">${u.lastAction || 'Idle'}</span></td>
+                    <td style="color: #777;">${u.loginTime || 'Offline'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function setCertType(type) {
+            selectedCertType = type;
+            showToast(`Selected: ${type}`, "success");
+        }
+
+        function sendGeneralComment() {
+            const teacherName = document.getElementById('msg-user-select').value;
+            const content = document.getElementById('msg-content').value;
+            if(!teacherName || !content) return showToast("Select teacher and type message.", "error");
+
+            notifyUser(teacherName, 'msg', `📩 Comment from Senior: "${content}"`);
+            logAction("Senior", "Sent Comment", `To: ${teacherName}`);
+            showToast("Comment sent!", "success");
+            document.getElementById('msg-content').value = "";
+        }
+
+        /* --- CERTIFICATE LOGIC --- */
+        function openCertificateModal() {
+            const teacherName = document.getElementById('cert-user-select').value;
+            const comment = document.getElementById('cert-comment').value;
+            if(!teacherName) return showToast("Select a teacher.", "error");
+            if(!comment) return showToast("Enter a personal message.", "error");
+
+            notifyUser(teacherName, 'cert', `🏆 You received a <strong>${selectedCertType} Certificate</strong>! "${comment}"`);
+            logAction("Senior", "Sent Certificate", `To: ${teacherName}`);
+            showToast(`Certificate sent to ${teacherName}!`, "success");
+
+            document.getElementById('cert-type-display').innerText = selectedCertType + " Certificate";
+            document.getElementById('cert-type-text').innerText = selectedCertType;
+            document.getElementById('cert-teacher-name').innerText = teacherName;
+            document.getElementById('cert-msg-text').innerText = comment;
+            document.getElementById('cert-modal').classList.add('active');
+        }
+
+        function printCertificate() {
+            window.print();
+            closeCertModal();
+        }
+        function closeCertModal() { document.getElementById('cert-modal').classList.remove('active'); }
+
+        /* --- INTERACTIONS --- */
+        function buyStock(id) {
+            if(!isMarketOpen()) return showToast("Market is Closed!", "error");
+            const stock = db.stocks.find(s => s.id === id);
+            if(!stock) return;
+            
+            const userRef = database.ref('users/' + encodeKey(currentUser.name));
+            userRef.transaction(user => {
+                if(user) {
+                    if(user.cash < stock.price) return;
+                    user.cash = (user.cash || 10.0) - stock.price;
+                    user.points = (user.points || 0) + 3;
+                }
+                return user;
+            }).then(result => {
+                if(result.committed) {
+                    database.ref('users/' + encodeKey(currentUser.name) + '/portfolio').push(id);
+                    database.ref('users/' + encodeKey(stock.author) + '/points').transaction(p => (p || 0) + 5);
+                    database.ref('stocks/' + id + '/price').transaction(p => (p || 1) + 0.05);
+
+                    logAction(currentUser.name, "Bought", stock.title);
+                    notifyUser(stock.author, 'msg', `💰 ${currentUser.name.split(' ')[0]} bought your strategy (+5 Pts)`);
+                    playSound('success');
+                } else {
+                    showToast("Insufficient funds.", "error");
+                }
+            });
+        }
+
+        function likeStock(id) {
+            const stock = db.stocks.find(s => s.id === id);
+            if(!stock) return;
+            
+            const likedBy = stock.likedBy || [];
+            if(likedBy.includes(currentUser.name)) return;
+
+            likedBy.push(currentUser.name);
+            
+            database.ref('stocks/' + id).update({ likedBy: likedBy });
+            database.ref('users/' + encodeKey(stock.author) + '/points').transaction(p => (p || 0) + 2);
+            
+            logAction(currentUser.name, "Liked", stock.title);
+            notifyUser(stock.author, 'msg', `❤️ ${currentUser.name.split(' ')[0]} liked "${stock.title}"`);
+            playSound('coin');
+        }
+
+        function submitInvestment() {
+            const cat = document.getElementById('upload-category').value;
+            const impact = document.getElementById('upload-impact').value;
+            const fileInput = document.getElementById('file-input');
+            
+            if(!impact || fileInput.files.length === 0) return showToast("Please fill all fields.", "error");
+
+            const file = fileInput.files[0];
+            const storageRef = storage.ref('uploads/' + Date.now() + '_' + file.name);
+            
+            showToast("Uploading...", "success");
+            
+            storageRef.put(file).then(snapshot => {
+                return snapshot.ref.getDownloadURL();
+            }).then(url => {
+                database.ref('users/' + encodeKey(currentUser.name) + '/points').transaction(p => (p || 0) + 40);
+                
+                const newStockRef = database.ref('stocks').push();
+                newStockRef.set({
+                    id: newStockRef.key,
+                    title: `${cat} Strategy`,
+                    category: cat,
+                    author: currentUser.name,
+                    price: 1.00,
+                    likedBy: [],
+                    impact: impact,
+                    fileUrl: url,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+                
+                logAction(currentUser.name, "Uploaded", `${cat} Strategy`);
+                closeUploadModal();
+                showToast("Strategy Listed! +40 Pts", "success");
+                playSound('success');
+            }).catch(err => {
+                console.error(err);
+                showToast("Upload failed. Check console.", "error");
+            });
+        }
+
+        /* --- UTILS --- */
+        function getCatColor(cat) {
+            if(cat.includes("Active")) return "var(--green)";
+            if(cat.includes("AI")) return "var(--yellow)";
+            if(cat.includes("Assessment")) return "var(--blue)";
+            return "var(--pink)";
+        }
+
+        function showToast(msg, type) {
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            t.innerHTML = `<span>${type === 'error'?'🚫':'✅'}</span> ${msg}`;
+            c.appendChild(t);
+            setTimeout(() => t.remove(), 4000);
+        }
+
+        function openUploadModal() { document.getElementById('upload-modal').classList.add('active'); }
+        function closeUploadModal() { document.getElementById('upload-modal').classList.remove('active'); }
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+            
+            if(type === 'coin') {
+                osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                osc.start(now); osc.stop(now + 0.5);
+            } else if (type === 'bell') {
+                osc.frequency.setValueAtTime(500, now); gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 1);
+                osc.start(now); osc.stop(now + 1);
+            } else {
+                osc.frequency.setValueAtTime(400, now); osc.frequency.setValueAtTime(600, now + 0.1); osc.frequency.setValueAtTime(800, now + 0.2);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.6);
+                osc.start(now); osc.stop(now + 0.6);
+            }
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
